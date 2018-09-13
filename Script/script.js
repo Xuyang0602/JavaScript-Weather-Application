@@ -54,6 +54,106 @@ window.onload = () => {
         } else console.error("Unknown state of the hourly weather panel and visible attribute");
     }
 
+    const drawWeatherData = (data, location) => {
+        console.log(data);
+
+        let currentlyData = data.currently;
+        let dailyData = data.daily.data;
+        let hourlyData = data.hourly.data;
+        let weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        let dailyWeatherWrapper = document.querySelector("#daily-weather-wrapper");
+        let dailyWeatherModel;
+        let day;
+        let maxMinTemp;
+        let dailyIcon;
+        let hourlyWeatherWrapper = document.querySelector("#hourly-weather-wrapper");
+        let hourlyWeatherModel;
+        let hourlyIcon;
+
+
+
+        // Set Current Weather section
+        
+        // Set Current Location
+        document.querySelectorAll(".location-label").forEach( (ele) => {
+            ele.innerText = location;
+        });
+
+        // Set the background
+        document.querySelector('main').style.backgroundImage = `url("../Resources/assets/images/bg-images/${currentlyData.icon}.jpg")`;
+        
+        // Set the icon
+        document.querySelector('#currentlyIcon').setAttribute('src', `../Resources/assets/images/summary-icons/${currentlyData.icon}-white.png`);
+
+        // Set the summary
+        document.querySelector('#summary-label').innerText = currentlyData.summary;
+
+        // Set the temperature (from Fahrenheit to Celcius)
+        document.querySelector('#degress-label').innerHTML = Math.round((currentlyData.temperature - 32) * 5 / 9) + '&#176;';
+
+        // Set humidty
+        document.querySelector('#humidity-label').innerText = Math.round(currentlyData.humidity * 100) + '%';
+
+        // Set wind speed
+        document.querySelector('#wind-speed-label').innerText = (currentlyData.windSpeed * 1.6093).toFixed(1) + ' kph';
+
+        // Set Lower Panel
+
+        // Set daily weather
+        while (dailyWeatherWrapper.children[1]) {
+            dailyWeatherWrapper.removeChild(dailyWeatherWrapper.children[1]);
+        }
+
+        for (let i = 0; i <= 6; i++) {
+            
+            // clone the node and remove display-none class
+            dailyWeatherModel = dailyWeatherWrapper.children[0].cloneNode(true);
+            dailyWeatherModel.classList.remove('display-none');
+
+            // set the day
+            day = weekDays[new Date(dailyData[i].time * 1000).getDay()];
+            dailyWeatherModel.children[0].children[0].innerHTML = day;
+
+            // set min/max temperature for the next days in celcius
+            maxMinTemp = Math.round((dailyData[i].temperatureMax - 32) * 5 / 9) + '&#176;' +
+                         Math.round((dailyData[i].temperatureMin - 32) * 5 / 9) + '&#176';
+            dailyWeatherModel.children[1].children[0].innerHTML = maxMinTemp;
+
+            // set daily icon
+            dailyIcon = dailyData[i].icon;
+            dailyWeatherModel.children[1].children[1].children[0].setAttribute('src', `../Resources/assets/images/summary-icons/${dailyIcon}-white.png`);
+
+            // append the model
+            dailyWeatherWrapper.appendChild(dailyWeatherModel);
+        }
+        dailyWeatherWrapper.children[1].classList.add('current-day-of-the-week');
+
+         // Set hourly weather
+         while (hourlyWeatherWrapper.children[1]) {
+            hourlyWeatherWrapper.removeChild(hourlyWeatherWrapper.children[1]);
+         }
+
+         for (let i = 0; i <= 24; i++) {
+            // clone the node and remove display-none class
+            hourlyWeatherModel = hourlyWeatherWrapper.children[0].cloneNode(true);
+            hourlyWeatherModel.classList.remove('display-none');
+
+            // set the hour
+            hourlyWeatherModel.children[0].children[0].innerHTML = new Date(hourlyData[i].time * 1000).getHours() + ":00";
+
+            // set temperature
+            hourlyWeatherModel.children[1].children[0].innerHTML = Math.round((hourlyData[i].temperature - 32) * 5 / 9) + '&#176;';
+
+            // set hourly icon
+            hourlyIcon = hourlyData[i].icon;
+            hourlyWeatherModel.children[1].children[1].children[0].setAttribute('src', `../Resources/assets/images/summary-icons/${hourlyIcon}-grey.png`);
+
+            // append the model
+            hourlyWeatherWrapper.appendChild(hourlyWeatherModel);
+        }
+
+        UI.showApp();
+    }
 
     document.querySelector("#open-menu-btn").addEventListener('click',  _showMenu);
     document.querySelector("#close-menu-btn ").addEventListener('click', _hideMenu);
@@ -61,7 +161,8 @@ window.onload = () => {
  
     return {
         showApp,
-        loadApp
+        loadApp,
+        drawWeatherData
     };
  })();
 
@@ -117,12 +218,12 @@ const GETLOCATION = (function() {
      const _getDarkSkyURL = (lat, lng) => `https://cors-anywhere.herokuapp.com/https://api.darksky.net/forecast/${darkSkyKey}/${lat},${lng}`;
      const _getGeocodeURL = (location) => `https://api.opencagedata.com/geocode/v1/json?q=${location}&key=${geoCodeKey}`;
 
-     const _getDarkSkyDate = (url) => {
+     const _getDarkSkyDate = (url, location) => {
          axios.get(url)
             .then( (res) => {
-                console.log(res);
+                UI.drawWeatherData(res.data, location);
             }).catch( (err) => {
-                console.log(err);
+                console.error(err);
             });
      }
 
@@ -131,19 +232,16 @@ const GETLOCATION = (function() {
 
          let geocodeURL = _getGeocodeURL(location);
 
-         console.log(geocodeURL);
-
          axios.get(geocodeURL)
             .then( (res) => {
-                // console.log(res.data.results[0].geometry);
                 let lat = res.data.results[0].geometry.lat;
                 let lng = res.data.results[0].geometry.lng;
 
                 let darkskyURL = _getDarkSkyURL(lat, lng);
-                _getDarkSkyDate(darkskyURL);
+                _getDarkSkyDate(darkskyURL, location);
 
             }).catch( (err) => {
-                console.log(err);
+                console.error(err);
             });
      };
 

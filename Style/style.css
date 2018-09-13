@@ -52,7 +52,7 @@ button {
 }
 
 .display-none {
-    display: none;
+    display: none !important;
 }
 
 .icon-small-25 {
@@ -129,7 +129,7 @@ button {
 
 #humidity-wind-container {
     position: absolute;
-    bottom: 30px;
+    bottom: 10px;
     text-align: center;
     left: 0;
 }
